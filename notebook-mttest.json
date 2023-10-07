@@ -1,0 +1,264 @@
+{
+  "experiments": {
+    "x0": {
+      "git-revision": "92593a96f61ab33089e44f177181206d173f0db5M",
+      "time": "Sat Oct  7 16:43:10 2023",
+      "machine": "ubuntu",
+      "cores": 10,
+      "runs": ["x0\/rw1\/mb\/0"]
+    },
+    "x1": {
+      "git-revision": "92593a96f61ab33089e44f177181206d173f0db5M",
+      "time": "Sat Oct  7 17:26:37 2023",
+      "machine": "ubuntu",
+      "cores": 10,
+      "runs": ["x1\/rw1\/mb\/0"]
+    }
+  },
+  "data": {
+    "x0\/rw1\/mb\/0": [
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 0,
+	"puts": 4076622,
+	"puts_per_sec": 407453.096704,
+	"gets": 4076622,
+	"gets_per_sec": 16645.2677482,
+	"ops": 8153244,
+	"ops_per_sec": 31983.9285315
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 1,
+	"puts": 4018136,
+	"puts_per_sec": 401624.350397,
+	"gets": 4018136,
+	"gets_per_sec": 15678.3712604,
+	"ops": 8036272,
+	"ops_per_sec": 30178.6465601
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 2,
+	"puts": 3892687,
+	"puts_per_sec": 389086.96299,
+	"gets": 3892687,
+	"gets_per_sec": 15334.4136557,
+	"ops": 7785374,
+	"ops_per_sec": 29505.9597888
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 3,
+	"puts": 4057124,
+	"puts_per_sec": 405514.191991,
+	"gets": 4057124,
+	"gets_per_sec": 15989.2647446,
+	"ops": 8114248,
+	"ops_per_sec": 30765.4595464
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 4,
+	"puts": 5001107,
+	"puts_per_sec": 499802.963328,
+	"gets": 5001107,
+	"gets_per_sec": 19401.537942,
+	"ops": 10002214,
+	"ops_per_sec": 37353.0897087
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 5,
+	"puts": 3960978,
+	"puts_per_sec": 395898.939859,
+	"gets": 3960978,
+	"gets_per_sec": 15482.1868171,
+	"ops": 7921956,
+	"ops_per_sec": 29799.0401122
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 6,
+	"puts": 3948104,
+	"puts_per_sec": 394638.179359,
+	"gets": 3948104,
+	"gets_per_sec": 15453.4785022,
+	"ops": 7896208,
+	"ops_per_sec": 29742.2905537
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 7,
+	"puts": 3965477,
+	"puts_per_sec": 396350.597435,
+	"gets": 3965477,
+	"gets_per_sec": 15823.3199908,
+	"ops": 7930954,
+	"ops_per_sec": 30431.7282905
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 8,
+	"puts": 4028162,
+	"puts_per_sec": 402595.172649,
+	"gets": 4028162,
+	"gets_per_sec": 15877.8571791,
+	"ops": 8056324,
+	"ops_per_sec": 30550.8273971
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 9,
+	"puts": 4002892,
+	"puts_per_sec": 400091.715536,
+	"gets": 4002892,
+	"gets_per_sec": 15629.4091985,
+	"ops": 8005784,
+	"ops_per_sec": 30083.6150341
+      }
+    ],
+    "x1\/rw1\/mb\/0": [
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 0,
+	"puts": 4377517,
+	"puts_per_sec": 437555.680083,
+	"gets": 4377517,
+	"gets_per_sec": 7270.14022697,
+	"ops": 8755034,
+	"ops_per_sec": 14302.6371495
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 1,
+	"puts": 4415337,
+	"puts_per_sec": 441326.363193,
+	"gets": 4415337,
+	"gets_per_sec": 6819.14557017,
+	"ops": 8830674,
+	"ops_per_sec": 13430.7659263
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 2,
+	"puts": 4272756,
+	"puts_per_sec": 427072.739878,
+	"gets": 4272756,
+	"gets_per_sec": 6610.20683146,
+	"ops": 8545512,
+	"ops_per_sec": 13018.9077716
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 3,
+	"puts": 4270889,
+	"puts_per_sec": 426872.21241,
+	"gets": 4270889,
+	"gets_per_sec": 6685.6238693,
+	"ops": 8541778,
+	"ops_per_sec": 13165.0581012
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 4,
+	"puts": 4917382,
+	"puts_per_sec": 491502.614583,
+	"gets": 4917382,
+	"gets_per_sec": 7723.58915048,
+	"ops": 9834764,
+	"ops_per_sec": 15208.1931318
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 5,
+	"puts": 4214602,
+	"puts_per_sec": 421258.966502,
+	"gets": 4214602,
+	"gets_per_sec": 6515.42664908,
+	"ops": 8429204,
+	"ops_per_sec": 12832.3805279
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 6,
+	"puts": 4228913,
+	"puts_per_sec": 422592.101491,
+	"gets": 4228913,
+	"gets_per_sec": 6583.92139456,
+	"ops": 8457826,
+	"ops_per_sec": 12965.8369984
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 7,
+	"puts": 4393495,
+	"puts_per_sec": 439126.560485,
+	"gets": 4393495,
+	"gets_per_sec": 6793.3632821,
+	"ops": 8786990,
+	"ops_per_sec": 13379.739694
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 8,
+	"puts": 4297574,
+	"puts_per_sec": 429558.172783,
+	"gets": 4297574,
+	"gets_per_sec": 6652.08003702,
+	"ops": 8595148,
+	"ops_per_sec": 13101.2754856
+      },
+      {
+	"table": "mb",
+	"test": "rw1",
+	"trial": 0,
+	"thread": 9,
+	"puts": 4288184,
+	"puts_per_sec": 428620.895097,
+	"gets": 4288184,
+	"gets_per_sec": 6631.71010618,
+	"ops": 8576368,
+	"ops_per_sec": 13061.3326043
+      }
+    ]
+  }
+}
