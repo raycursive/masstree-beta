@@ -29,6 +29,9 @@ all: test_atomics mtd mtclient mttest
 %.o: %.cc config.h $(DEPSDIR)/stamp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS) -include config.h -c -o $@ $<
 
+testsuites/%.o: testsuites/%.cc config.h $(DEPSDIR)/stamp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(DEPCFLAGS) -include config.h -c -o $@ $<
+
 %.S: %.o
 	objdump -S $< > $@
 
