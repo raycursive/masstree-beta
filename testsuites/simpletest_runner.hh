@@ -48,7 +48,7 @@ public:
     static testrunner* find(const lcdf::String& name, const lcdf::String& type) {
         return static_cast<testrunner*>(testrunner_base::find(name, type));
     }
-    virtual void run(T) = 0;
+    virtual void run(T&) = 0;
 };
 
 #define _STR(x) #x
@@ -60,7 +60,7 @@ public:
     class testrunner_ ## client_type ## _ ## name : public testrunner<client_type> {      \
     public:                                            \
         testrunner_ ## client_type ## _ ## name() : testrunner(#name, client_type::tname()) {} \
-        void run(client_type client) { text; client.finish(); } \
+        void run(client_type& client) { text; client.finish(); } \
     }; static testrunner_ ## client_type ## _ ## name testrunner_ ## client_type ## _ ##name ## _instance; }
 
 #endif
