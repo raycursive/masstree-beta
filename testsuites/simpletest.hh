@@ -83,49 +83,10 @@ void runtest(int nthreads, void* (*func)(void*)) {
         pthread_join(tis[i]->pthread(), 0);
 }
 
-
-static double level(const std::vector<double> &v, double frac) {
-    frac *= v.size() - 1;
-    int base = (int) frac;
-    if (base == frac)
-        return v[base];
-    else
-        return v[base] * (1 - (frac - base)) + v[base + 1] * (frac - base);
-}
-
-static String experiment_test_table_trial(const String &key) {
-    const char *l = key.begin(), *r = key.end();
-    if (l + 2 < r && l[0] == 'x' && isdigit((unsigned char) l[1])) {
-        for (const char *s = l; s != r; ++s)
-            if (*s == '/') {
-                l = s + 1;
-                break;
-            }
-    }
-    return key.substring(l, r);
-}
-
-static String experiment_run_test_table(const String &key) {
-    const char *l = key.begin(), *r = key.end();
-    for (const char *s = r; s != l; --s)
-        if (s[-1] == '/') {
-            r = s - 1;
-            break;
-        } else if (!isdigit((unsigned char) s[-1]))
-            break;
-    return key.substring(l, r);
-}
-
-static String experiment_test_table(const String &key) {
-    return experiment_run_test_table(experiment_test_table_trial(key));
-}
-
 static void run_one_test(int trial, const char *treetype, const char *test,
                          const int *collectorpipe, int nruns);
 
 enum { normtype_none, normtype_pertest, normtype_firsttest };
-
-static void update_labnotebook(String notebook);
 
 void *stat_collector(void *arg) {
     int p = (int) (intptr_t) arg;
