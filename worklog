@@ -2,6 +2,8 @@
 
 - [ ] binary tree: use value_bag or value_string instead of std::string as the value type
 
+- [ ] fourtree: lock-free put: only acquire lock on the node to be modified
+
 - [ ] OLFIT tree
   - [x] Structure
   - [x] Get
@@ -9,6 +11,8 @@
   - [ ] Test
 
 # DONE
+
+- [x] fourtree
 
 - [x] fixed sized key representation
 
