@@ -3,6 +3,7 @@
 #include "circular_int.hh"
 #include "compiler.hh"
 #include "fixsizedkey.hh"
+#include "kvrow.hh"
 #include "kvthread.hh"
 #include "mtcounters.hh"
 #include "nodeversion.hh"
@@ -19,7 +20,7 @@ using lcdf::String;
 template <size_t KeySize = 16> struct tree_params {
   static constexpr int ikey_size = KeySize;
   static constexpr int fanout = 4;
-  using value_type = std::string;
+  using value_type = row_type;
   using threadinfo_type = ::threadinfo;
   using nodeversion_value_type = uint32_t;
 };
@@ -67,7 +68,7 @@ private:
         } else {
           key_type k(node->keys0_[i], node->keys1_[i]);
           fprintf(f, "%d:(%s:%s); ", i, k.unparse_printable().c_str(),
-                  node->values_[i]->data());
+                  node->values_[i]->col(0).data());
         }
       }
       fprintf(f, "\n");
@@ -114,16 +115,18 @@ public:
     return cmp;
   }
 
-  void assign(const key_type &k, value_type v, size_t index, threadinfo &ti) {
-    value_type *pNewValue =
-        (value_type *)ti.pool_allocate(sizeof(value_type), memtag_value);
-    new (pNewValue) value_type(v);
+  void assign(const key_type &k, Str v, size_t index, threadinfo &ti) {
+    value_type* pNewValue = value_type::create1(v, 0, ti);
+    // value_type *pNewValue =
+    //     (value_type *)ti.pool_allocate(sizeof(value_type), memtag_value);
+    // new (pNewValue) value_type(v);
     keys0_[index] = k.ikey_u.ikey[0];
     keys1_[index] = k.ikey_u.ikey[1];
     value_type *oldValue = values_[index];
     values_[index] = pNewValue;
     if (oldValue != nullptr) {
-      ti.pool_deallocate(oldValue, sizeof(value_type), memtag_value);
+      // ti.pool_deallocate(oldValue, sizeof(value_type), memtag_value);
+        oldValue->deallocate_rcu(ti);
     }
   }
 
@@ -243,7 +246,7 @@ public:
   }
 
   template <typename T>
-  void put(T &tree, Str key, typename T::value_type value, threadinfo &ti) {
+  void put(T &tree, Str key, Str value, threadinfo &ti) {
     using node_type = typename T::node_type;
     using key_type = typename T::key_type;
 

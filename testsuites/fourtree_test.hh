@@ -63,10 +63,10 @@ void fourtree_test_client::get_check(Str key, Str expected) {
   if (unlikely(v == nullptr)) {
     fail("get(%s) failed (expected %s)\n", String(key).printable().c_str(),
          String(expected).printable().c_str());
-  } else if (unlikely(expected != *v)) {
+  } else if (unlikely(expected != v->col(0))) {
     fail("get(%s) returned unexpected value %s (expected %s)\n",
          String(key).printable().c_str(),
-         String(*v).substr(0, 40).printable().c_str(),
+         String(v->col(0)).substr(0, 40).printable().c_str(),
          String(expected).substr(0, 40).printable().c_str());
   }
 }

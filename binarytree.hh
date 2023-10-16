@@ -3,12 +3,14 @@
 #include "circular_int.hh"
 #include "compiler.hh"
 #include "fixsizedkey.hh"
+#include "kvproto.hh"
 #include "kvthread.hh"
 #include "mtcounters.hh"
 #include "str.hh"
 #include "string.hh"
 #include <stdio.h>
 #include <string>
+#include "kvrow.hh"
 
 namespace binarytree {
 using lcdf::Str;
@@ -17,7 +19,7 @@ using lcdf::String;
 template <size_t KeySize=16> struct tree_params {
   static constexpr int ikey_size = KeySize;
   static constexpr bool enable_int_cmp = true;
-  using value_type = std::string;
+  using value_type = row_type;
   using threadinfo_type = ::threadinfo;
 };
 
@@ -61,7 +63,7 @@ private:
         fprintf(f, "%s", (isLeft ? "├──" : "└──"));
 
         // print the value of the node
-        fprintf(f, "%s:%s\n", node->key_.unparse_printable().c_str(), (node->pValue_ ? node->pValue_->data() : "null"));
+        fprintf(f, "%s:%s\n", node->key_.unparse_printable().c_str(), (node->pValue_ ? node->pValue_->col(0).data() : "null"));
 
         // enter the next tree level - left and right branch
         print(f, prefix + (isLeft ? "│   " : "    "), node->pLeft_, true);
@@ -149,7 +151,7 @@ class query {
 public:
   template <typename T> typename T::value_type *get(T &tree, Str key) {
     typename T::cursor_type c(tree, key);
-    if (c.find()) {
+    if (c.find() && c.pv_) {
       return c.pv_;
     } else {
       return nullptr;
@@ -157,13 +159,14 @@ public:
   }
 
   template <typename T>
-  void put(T &tree, Str key, typename T::value_type value, threadinfo &ti) {
+  void put(T &tree, Str key, Str value, threadinfo &ti) {
     using value_type = typename T::value_type;
     using node_type = typename T::node_type;
 
     // allocate new value ptr
-    value_type *newValue = (value_type *)ti.pool_allocate(sizeof(value_type), memtag_value);
-    new (newValue) value_type(value);
+    value_type* newValue = value_type::create1(value, 0, ti);
+    // value_type *newValue = (value_type *)ti.pool_allocate(sizeof(value_type), memtag_value);
+    // new (newValue) value_type(value);
 
     retry:
     typename T::cursor_type c(tree, key);
@@ -178,7 +181,8 @@ public:
         c.pv_ = c.node_->pValue_;
         relax_fence();
       }
-      ti.pool_deallocate(c.pv_, sizeof(value_type), memtag_value);
+      c.pv_->deallocate_rcu(ti);
+      // ti.pool_deallocate(c.pv_, sizeof(value_type), memtag_value);
     } else {
       // perform insert
       if (!newNode) {

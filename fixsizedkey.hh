@@ -3,6 +3,7 @@
 #include "str.hh"
 #include "string.hh"
 #include "string_slice.hh"
+#include "compiler.hh"
 
 using lcdf::Str;
 using lcdf::String;
@@ -66,6 +67,11 @@ class fix_sized_key {
         fix_sized_key<Size> k(ikey);
         return k.unparse_printable();
     }
+
+    char* to_char() {
+        return ikey_u.s;
+    }
+
 
     Str full_string() const {
         return Str(ikey_u.s);

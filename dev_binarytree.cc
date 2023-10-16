@@ -38,15 +38,15 @@ int main() {
             << "EMPTY" << std::endl;
   q.put(*bt, Str("hello"), Str("world"), *main_ti);
   auto v2 = q.get(*bt, "hello");
-  std::cout << "v2: " << v2->data() << std::endl;
+  std::cout << "v2: " << v2->col(0).data() << std::endl;
 
   for(int i = 1000002; i>1000000; i--) {
     put(bt, main_ti, q, i, i+1);
-    std::cout << "getValue: " << i << ":" << q.get(*bt, quick_istr(i).string())->data() << std::endl;
+    std::cout << "getValue: " << i << ":" << q.get(*bt, quick_istr(i).string())->col(0).data() << std::endl;
   }
-  std::cout << "getValue: " << 1000002 << ":" << q.get(*bt, quick_istr(1000002).string())->data() << std::endl;
+  std::cout << "getValue: " << 1000002 << ":" << q.get(*bt, quick_istr(1000002).string())->col(0).data() << std::endl;
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 1000; i++) {
     long x = rand();
     put(bt, main_ti, q, x, x + 1);
   }
