@@ -115,12 +115,12 @@ node_type *child(int direction) {
     return pLeft_;
 }
 
-static height_t get_height(node_type *node) {
+inline static height_t get_height(node_type *node) {
     return node == nullptr ? 0 : node->height_;
 }
 
-static height_t get_balance_factor(node_type *nd) {
-    return node::get_height(nd->pLeft_) - node::get_height(nd->pRight_);
+inline static height_t get_balance_factor(node_type *nd) {
+    return get_height(nd->pLeft_) - get_height(nd->pRight_);
 }
 
 void recompute_height() {
@@ -156,11 +156,11 @@ node_type *balance_height(node_type *nd) {
 
     auto balance_factor = get_balance_factor(nd);
 
-    if (abs((int) balance_factor) <= 1) return nd; // No need to balance
+    if (abs(balance_factor) <= 1) return nd; // No need to balance
 
     if (balance_factor > 0) {
         // Left height greater
-        auto left_balance_factor = get_balance_factor(nd->pLeft_);
+        auto left_balance_factor = get_balance_factor(nd->pLeft_);;
         if (left_balance_factor > 0) {
             // left-left case
             return right_rotate(nd);
@@ -171,7 +171,7 @@ node_type *balance_height(node_type *nd) {
         }
     } else {
         // Right height greater
-        auto right_balance_factor = get_balance_factor(nd->pLeft_);
+        auto right_balance_factor = get_balance_factor(nd->pRight_);
         if (right_balance_factor < 0) {
             // right-right case
             return left_rotate(nd);
@@ -360,7 +360,7 @@ public:
 
                     el.p_node->recompute_height();
                     el.p_node = el.p_node->balance_height(el.p_node);
-                    std::cout << "Recomputed height: " << el.p_node->height_;
+//                    std::cout << "Recomputed height: " << el.p_node->height_;
                     prev = el.p_node;
                 }
             } else {
