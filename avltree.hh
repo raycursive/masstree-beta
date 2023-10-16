@@ -54,6 +54,8 @@ public:
 
     inline node_type *root() const { return root_; }
 
+    inline void set_root(node_type *rt) { root_ = rt; }
+
     static const char *name() { return "avltree"; }
 
     void print(FILE *f) const {
@@ -359,10 +361,10 @@ public:
                     }
 
                     el.p_node->recompute_height();
-                    el.p_node = el.p_node->balance_height(el.p_node);
-//                    std::cout << "Recomputed height: " << el.p_node->height_;
-                    prev = el.p_node;
+                    prev = el.p_node->balance_height(el.p_node);
                 }
+
+                tree.set_root(prev);
             } else {
                 goto retry;
             }
