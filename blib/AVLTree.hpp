@@ -6,6 +6,7 @@
 #include "blib/hash.hpp"
 #include "HazardManager.hpp"
 #include "string.h"
+#include "kvthread.hh"
 
 namespace avltree {
 
@@ -74,15 +75,17 @@ enum Result {
 template<typename T, int Threads>
 class AVLTree {
     using value_type = T::value_type;
+    using key_type = T::key_type;
 
     public:
+        threadinfo &ti;
         AVLTree();
         ~AVLTree();
         
-        bool contains(T value);
-        value_t get(T value);
-        bool add(T value);
-        bool remove(T value);
+        bool contains(key_type k);
+        value_t get(key_type k, threadinfo &ti);
+        bool add(key_type k, value_type value, threadinfo &ti);
+        bool remove(key_type k);
 
     private:
         /* Allocate new nodes */
@@ -93,10 +96,10 @@ class AVLTree {
         Result attemptGet(int key, Node* node, int dir, long nodeV, value_t* value);
 
         /* Update stuff  */
-        Result updateUnderRoot(int key, Function func, value_t expected, value_t newValue, Node* holder);
-        bool attemptInsertIntoEmpty(int key, value_t value, Node* holder);
-        Result attemptUpdate(int key, Function func, value_t expected, value_t newValue, Node* parent, Node* node, long nodeOVL);
-        Result attemptNodeUpdate(Function func, value_t expected, value_t newValue, Node* parent, Node* node);
+        Result updateUnderRoot(int key, Function func, value_t newValue, Node* holder, threadinfo &ti);
+        bool attemptInsertIntoEmpty(int key, value_t value, Node* holder, threadinfo &ti);
+        Result attemptUpdate(int key, Function func, value_t newValue, Node* parent, Node* node, long nodeOVL, threadinfo &ti);
+        Result attemptNodeUpdate(Function func, value_t newValue, Node* parent, Node* node, threadinfo &ti);
         bool attemptUnlink_nl(Node* parent, Node* node);
         
         /* To wait during shrinking  */
@@ -178,7 +181,7 @@ Node* AVLTree<T, Threads>::newNode(int height, int key, long version, value_t va
 }
 
 template<typename T, int Threads>
-bool AVLTree<T, Threads>::contains(T value){
+bool AVLTree<T, Threads>::contains(key_type value){
     int key = hash(value);
 
     while(true){
@@ -206,7 +209,7 @@ bool AVLTree<T, Threads>::contains(T value){
 }
 
 template<typename T, int Threads>
-value_t AVLTree<T, Threads>::get(T value){
+value_t AVLTree<T, Threads>::get(key_type value, threadinfo &ti){
     int key = hash(value);
 
     while(true){
@@ -224,7 +227,7 @@ value_t AVLTree<T, Threads>::get(T value){
             if(isShrinkingOrUnlinked(ovl)){
                 waitUntilNotChanging(right);
             } else if(right == rootHolder->right){
-                value_t *value = malloc(sizeof(value_t));
+                value_type *value = (value_type *) ti.pool_allocate(sizeof(value_type), memtag_value);
                 Result vo = attemptGet(key, right, rightCmp, ovl, value);
                 if(vo != RETRY){
                     return *value;
@@ -276,8 +279,8 @@ Result AVLTree<T, Threads>::attemptGet(int key, Node* node, int dir, long nodeV,
     }
 }
 
-inline bool shouldUpdate(Function func, bool prev, bool/* expected*/){
-    return func == UpdateIfAbsent ? !prev : prev;
+inline bool shouldUpdate(Function func, bool prev){
+    return true;
 }
 
 inline Result updateResult(Function func, bool/* prev*/){
@@ -289,25 +292,21 @@ inline Result noUpdateResult(Function func, bool/* prev*/){
 }
 
 template<typename T, int Threads>
-bool AVLTree<T, Threads>::add(T value){
-    return updateUnderRoot(hash(value), UpdateIfAbsent, false, true, rootHolder) == NOT_FOUND;
+bool AVLTree<T, Threads>::add(key_type k, value_type value, threadinfo &ti){
+    return updateUnderRoot(hash(k), UpdateIfAbsent, value, rootHolder) == NOT_FOUND;
 }
 
 template<typename T, int Threads>
-bool AVLTree<T, Threads>::remove(T value){
-    return updateUnderRoot(hash(value), UpdateIfPresent, true, false, rootHolder) == FOUND;
+bool AVLTree<T, Threads>::remove(key_type k){
+    return updateUnderRoot(hash(k), UpdateIfPresent, NULL, rootHolder) == FOUND;
 }
 
 template<typename T, int Threads>
-Result AVLTree<T, Threads>::updateUnderRoot(int key, Function func, value_t expected, value_t newValue, Node* holder){
+Result AVLTree<T, Threads>::updateUnderRoot(int key, Function func, value_t newValue, Node* holder, threadinfo &ti){
     while(true){
         Node* right = holder->right;
 
         if(!right){
-            if(!shouldUpdate(func, false, expected)){
-                return noUpdateResult(func, false);
-            }
-
             if(!newValue || attemptInsertIntoEmpty(key, newValue, holder)){
                 return updateResult(func, false);
             }
@@ -317,7 +316,7 @@ Result AVLTree<T, Threads>::updateUnderRoot(int key, Function func, value_t expe
             if(isShrinkingOrUnlinked(ovl)){
                 waitUntilNotChanging(right);
             } else if(right == holder->right){
-                Result vo = attemptUpdate(key, func, expected, newValue, holder, right, ovl);
+                Result vo = attemptUpdate(key, func, newValue, holder, right, ovl, ti);
                 if(vo != RETRY){
                     return vo;   
                 }
@@ -327,11 +326,13 @@ Result AVLTree<T, Threads>::updateUnderRoot(int key, Function func, value_t expe
 }
 
 template<typename T, int Threads>
-bool AVLTree<T, Threads>::attemptInsertIntoEmpty(int key, value_t value, Node* holder){
+bool AVLTree<T, Threads>::attemptInsertIntoEmpty(int key, value_t value, Node* holder, threadinfo &ti){
     publish(holder);
     scoped_lock lock(holder->lock);
 
     if(!holder->right){
+        value_type *newValue = (value_type *) ti.pool_allocate(sizeof(value_type), memtag_value);
+        new(newValue) value_type(value);
         holder->right = newNode(1, key, 0, value, holder, nullptr, nullptr);
         holder->height = 2;
         releaseAll();
@@ -343,10 +344,10 @@ bool AVLTree<T, Threads>::attemptInsertIntoEmpty(int key, value_t value, Node* h
 }
 
 template<typename T, int Threads>
-Result AVLTree<T, Threads>::attemptUpdate(int key, Function func, value_t expected, value_t newValue, Node* parent, Node* node, long nodeOVL){
+Result AVLTree<T, Threads>::attemptUpdate(int key, Function func, value_t newValue, Node* parent, Node* node, long nodeOVL, threadinfo &ti){
     int cmp = key - node->key;
     if(cmp == 0){
-        return attemptNodeUpdate(func, expected, newValue, parent, node);
+        return attemptNodeUpdate(func, newValue, parent, node, ti);
     }
 
     while(true){
@@ -376,11 +377,6 @@ Result AVLTree<T, Threads>::attemptUpdate(int key, Function func, value_t expect
                         success = false;
                         damaged = nullptr;
                     } else {
-                        if(!shouldUpdate(func, false, expected)){
-                            releaseAll();
-                            return noUpdateResult(func, false);
-                        }
-
                         Node* newChild = newNode(1, key, 0, true, node, nullptr, nullptr);
                         node->setChild(cmp, newChild);
 
@@ -408,7 +404,7 @@ Result AVLTree<T, Threads>::attemptUpdate(int key, Function func, value_t expect
                     return RETRY;
                 }
 
-                Result vo = attemptUpdate(key, func, expected, newValue, node, child, childOVL);
+                Result vo = attemptUpdate(key, func, newValue, node, child, childOVL, ti);
                 if(vo != RETRY){
                     return vo;
                 }
@@ -418,7 +414,7 @@ Result AVLTree<T, Threads>::attemptUpdate(int key, Function func, value_t expect
 }
 
 template<typename T, int Threads>
-Result AVLTree<T, Threads>::attemptNodeUpdate(Function func, value_t expected, value_t newValue, Node* parent, Node* node){
+Result AVLTree<T, Threads>::attemptNodeUpdate(Function func, value_t newValue, Node* parent, Node* node, threadinfo &ti){
     if(!newValue){
         if(!node->value){
             return NOT_FOUND;
@@ -443,11 +439,6 @@ Result AVLTree<T, Threads>::attemptNodeUpdate(Function func, value_t expected, v
                 scoped_lock lock(node->lock);
                 
                 prev = node->value;
-
-                if(!shouldUpdate(func, prev, expected)){
-                    releaseAll();
-                    return noUpdateResult(func, prev);
-                }
 
                 if(!prev){
                     releaseAll();
@@ -478,10 +469,6 @@ Result AVLTree<T, Threads>::attemptNodeUpdate(Function func, value_t expected, v
         }
 
         value_t prev = node->value;
-        if(!shouldUpdate(func, prev, expected)){
-            releaseAll();
-            return noUpdateResult(func, prev);
-        }
 
         if(!newValue && (!node->left || !node->right)){
             releaseAll();
@@ -927,7 +914,6 @@ Node* AVLTree<T, Threads>::rotateLeftOverRight_nl(Node* nParent, Node* n, int hL
     return fixHeight_nl(nParent);
 }
 
-using default_table = AVLTree<string,1>;
 } //end of avltree
 
 #endif
