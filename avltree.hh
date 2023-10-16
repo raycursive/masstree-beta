@@ -22,77 +22,84 @@ using std::max;
 using std::stack;
 typedef int64_t height_t;
 
+using lcdf::Str;
+using lcdf::String;
+using std::max;
+using std::stack;
+typedef int64_t height_t;
+
+template<size_t KeySize = 16>
+struct tree_params {
+    static constexpr int ikey_size = KeySize;
+    static constexpr bool enable_int_cmp = true;
+    using value_type = std::string;
+    using threadinfo_type = ::threadinfo;
+};
+
+
+template<typename P>
+class node;
+
+template<typename P>
+class cursor;
+
+template<typename P>
+class avl_tree {
+public:
+    using parameter_type = P;
+    using node_type = node<P>;
+    using value_type = typename P::value_type;
+    using key_type = fix_sized_key<P::ikey_size, P::enable_int_cmp>;
+    using threadinfo = typename P::threadinfo_type;
+    using cursor_type = cursor<P>;
+
+    AVLTree<P, 1> tree_obj;
+
+    inline avl_tree() {}
+
+    void initialize(threadinfo &ti);
+
+    void destroy(threadinfo &ti);
+
+    inline node_type *root() const { return root_; }
+
+    inline void set_root(node_type *rt) { root_ = rt; }
+
+    static const char *name() { return "avltree"; }
+
+    void print(FILE *f) const {
+        print(f, root_);
+    }
+
+private:
+    node_type *root_;
+
+    void print(FILE *f, node_type *node) const {
+        
+    }
+
+    void print(FILE *f, const std::string &prefix, const node_type *node, bool isLeft) const {
+        
+    }
+};
+
 class query {
 public:
     template<typename T>
     typename T::value_type *get(T &tree, Str key) {
-        typename T::cursor_type c(tree, key);
-        if (c.find()) {
-            return c.pv_;
-        } else {
+        //  using value_type = T::value_type;
+         string *value = nullptr;
+
+         if(tree.tree_obj.get(key, value)) {
+            return value;
+         } else {
             return nullptr;
-        }
+         }
     }
 
     template<typename T>
     void put(T &tree, Str key, typename T::value_type value, threadinfo &ti) {
-        using value_type = typename T::value_type;
-        using node_type = typename T::node_type;
-
-        // allocate new value ptr
-        value_type *newValue = (value_type *) ti.pool_allocate(sizeof(value_type), memtag_value);
-        new(newValue) value_type(value);
-        node_type *newNode = nullptr;
-
-        retry:
-        typename T::cursor_type c(tree, key);
-        auto stk = c.find_with_stack();
-        bool found = !stk.empty() && stk.top().cmp == 0;
-
-        if (found) {
-            // perform update
-            release_fence();
-            while (true) {
-                if (bool_cmpxchg<value_type *>(&c.node_->pValue_, c.pv_, newValue)) {
-                    break;
-                }
-                relax_fence();
-            }
-            ti.pool_deallocate(c.pv_, sizeof(value_type), memtag_value);
-        } else {
-            // perform insert
-            if (!newNode) {
-                newNode = node_type::make(key, ti);
-                newNode->pValue_ = newValue;
-            }
-            release_fence();
-            int dir = c.k_.compare(c.parent_->key_);
-            if (bool_cmpxchg<node_type *>(dir > 0 ? &c.parent_->pRight_
-                                                  : &c.parent_->pLeft_,
-                                          nullptr, newNode)) {
-                c.node_ = newNode;
-
-                //  Balance
-                auto prev = newNode;
-                while (!stk.empty()) {
-                    auto el = stk.top();
-                    stk.pop();
-                    if (el.cmp > 0) {
-                        // Right
-                        el.p_node->pRight_ = prev;
-                    } else {
-                        el.p_node->pLeft_ = prev;
-                    }
-
-                    el.p_node->recompute_height();
-                    prev = AVLHelpers<node_type>::balance_height(el.p_node);
-                }
-
-                tree.set_root(prev);
-            } else {
-                goto retry;
-            }
-        }
+        tree.tree_obj.add(key, value, ti);
     }
 };
 
