@@ -13,6 +13,90 @@
       "machine": "ubuntu",
       "cores": 1,
       "runs": ["x1\/rw1\/fourtree\/0"]
+    },
+    "x2": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Sun Oct 15 17:40:10 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x2\/rw1\/avltree\/0"]
+    },
+    "x3": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Sun Oct 15 17:56:46 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x3\/rw1\/binarytree\/0"]
+    },
+    "x4": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Sun Oct 15 19:20:01 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x4\/rw1\/avltree\/0"]
+    },
+    "x5": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Mon Oct 16 01:18:47 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x5\/rw1\/avltree\/0"]
+    },
+    "x6": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Mon Oct 16 01:21:01 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x6\/rw1\/binarytree\/0"]
+    },
+    "x7": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Mon Oct 16 01:30:35 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x7\/rw1\/avltree\/0"]
+    },
+    "x8": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Mon Oct 16 01:31:54 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x8\/rw1\/binarytree\/0"]
+    },
+    "x9": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Mon Oct 16 01:35:12 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x9\/rw1\/avltree\/0"]
+    },
+    "x10": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Mon Oct 16 01:35:59 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x10\/uscale\/avltree\/0"]
+    },
+    "x11": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Mon Oct 16 01:36:54 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x11\/simple\/avltree\/0","x11\/rw1\/avltree\/0","x11\/uscale\/avltree\/0"]
+    },
+    "x12": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Mon Oct 16 11:47:07 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x12\/simple\/avltree\/0","x12\/rw1\/avltree\/0","x12\/uscale\/avltree\/0"]
+    },
+    "x13": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Mon Oct 16 11:47:38 2023",
+      "machine": "Yak",
+      "cores": 1,
+      "runs": ["x13\/rw1\/avltree\/0"]
     }
   },
   "data": {
@@ -21,6 +105,54 @@
     ],
     "x1\/rw1\/fourtree\/0": [
       {"table":"fourtree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x2\/rw1\/avltree\/0": [
+      {"table":"avltree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x3\/rw1\/binarytree\/0": [
+      {"table":"binarytree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x4\/rw1\/avltree\/0": [
+      {"table":"avltree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x5\/rw1\/avltree\/0": [
+      {"table":"avltree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x6\/rw1\/binarytree\/0": [
+      {"table":"binarytree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x7\/rw1\/avltree\/0": [
+      {"table":"avltree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x8\/rw1\/binarytree\/0": [
+      {"table":"binarytree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x9\/rw1\/avltree\/0": [
+      {"table":"avltree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x10\/uscale\/avltree\/0": [
+      {"table":"avltree","test":"uscale","trial":0,"thread":0}
+    ],
+    "x11\/simple\/avltree\/0": [
+      {"table":"avltree","test":"simple","trial":0,"thread":0}
+    ],
+    "x11\/rw1\/avltree\/0": [
+      {"table":"avltree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x11\/uscale\/avltree\/0": [
+      {"table":"avltree","test":"uscale","trial":0,"thread":0}
+    ],
+    "x12\/simple\/avltree\/0": [
+      {"table":"avltree","test":"simple","trial":0,"thread":0}
+    ],
+    "x12\/rw1\/avltree\/0": [
+      {"table":"avltree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x12\/uscale\/avltree\/0": [
+      {"table":"avltree","test":"uscale","trial":0,"thread":0}
+    ],
+    "x13\/rw1\/avltree\/0": [
+      {"table":"avltree","test":"rw1","trial":0,"thread":0}
     ]
   }
 }

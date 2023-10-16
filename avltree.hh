@@ -19,7 +19,7 @@ using lcdf::Str;
 using lcdf::String;
 using std::max;
 using std::stack;
-typedef uint32_t height_t;
+typedef int64_t height_t;
 
 template<size_t KeySize = 16>
 struct tree_params {
@@ -53,6 +53,8 @@ public:
     void destroy(threadinfo &ti);
 
     inline node_type *root() const { return root_; }
+
+    inline void set_root(node_type *rt) { root_ = rt; }
 
     static const char *name() { return "avltree"; }
 
@@ -102,9 +104,9 @@ using node_type = node<P>;
 public:
 key_type key_;
 value_type *pValue_;
-node<P> *pLeft_;
-node<P> *pRight_;
-height_t height_ = 0;
+node<P> *pLeft_ = nullptr;
+node<P> *pRight_ = nullptr;
+height_t height_ = 1;
 
 node_type *child(int direction) {
     assert(direction != 0);
@@ -115,74 +117,8 @@ node_type *child(int direction) {
     return pLeft_;
 }
 
-static inline height_t get_height(node_type *node) {
-    return node == nullptr ? 0 : node->height_;
-}
-
 void recompute_height() {
-    height_ = max(get_height(pLeft_), get_height(pRight_)) + 1;
-}
-
-static node_type *left_rotate(node_type *nd) {
-    auto right_node = nd->pRight_;
-
-    nd->pRight_ = right_node->pLeft_;
-    right_node->pLeft_ = nd;
-
-    nd->recompute_height();
-    right_node->recompute_height();
-
-    return right_node;
-}
-
-static node_type *right_rotate(node_type *nd) {
-    auto left_node = nd->pLeft_;
-
-    nd->pLeft_ = left_node->pRight_;
-    left_node->pRight_ = nd;
-
-    nd->recompute_height();
-    left_node->recompute_height();
-
-    return left_node;
-}
-
-static inline height_t get_balance_factor(node_type *nd) {
-    return node::get_height(nd->pLeft_) - node::get_height(nd->pRight_);
-}
-
-node_type *balance_height(node_type *nd) {
-    if (nd == nullptr) {
-        return nullptr;
-    }
-
-    auto balance_factor = get_balance_factor(nd);
-
-    if (abs((int)balance_factor) <= 1) return nd; // No need to balance
-
-    if (balance_factor > 0) {
-        // Left height greater
-        auto left_balance_factor = get_balance_factor(nd->pLeft_);
-        if (left_balance_factor > 0) {
-            // left-left case
-            return right_rotate(nd);
-        } else {
-            // left-right case
-            nd->pLeft_ = left_rotate(nd->pLeft_);
-            return right_rotate(nd);
-        }
-    } else {
-        // Right height greater
-        auto right_balance_factor = get_balance_factor(nd->pLeft_);
-        if (right_balance_factor < 0) {
-            // right-right case
-            return left_rotate(nd);
-        } else {
-            // right-left case
-            nd->pRight_ = right_rotate(nd->pRight_);
-            return left_rotate(nd);
-        }
-    }
+    height_ = max(pLeft_ == nullptr ? 0 : pLeft_->height_, pRight_ == nullptr ? 0 : pRight_->height_) + 1;
 }
 
 node(Str
@@ -273,6 +209,72 @@ private:
     friend class query;
 };
 
+template<typename node_type>
+struct AVLHelpers {
+    inline static height_t get_balance_factor(node_type *nd) {
+        auto lt_height = nd->pLeft_ == nullptr ? 0 : nd->pLeft_->height_;
+        auto rt_height = nd->pRight_ == nullptr ? 0 : nd->pRight_->height_;
+
+        return lt_height - rt_height;
+    }
+
+    static node_type *left_rotate(node_type *nd) {
+        auto right_node = nd->pRight_;
+
+        nd->pRight_ = right_node->pLeft_;
+        right_node->pLeft_ = nd;
+
+        nd->recompute_height();
+        right_node->recompute_height();
+
+        return right_node;
+    }
+
+    static node_type *right_rotate(node_type *nd) {
+        auto left_node = nd->pLeft_;
+
+        nd->pLeft_ = left_node->pRight_;
+        left_node->pRight_ = nd;
+
+        nd->recompute_height();
+        left_node->recompute_height();
+
+        return left_node;
+    }
+
+    static node_type *balance_height(node_type *nd) {
+        if (nd == nullptr) return nullptr;
+
+        auto balance_factor = get_balance_factor(nd);
+
+        if (abs(balance_factor) <= 1) return nd; // No need to balance
+
+        if (balance_factor > 0) {
+            // Left height greater
+            auto left_balance_factor = get_balance_factor(nd->pLeft_);;
+            if (left_balance_factor > 0) {
+                // left-left case
+                return right_rotate(nd);
+            } else {
+                // left-right case
+                nd->pLeft_ = left_rotate(nd->pLeft_);
+                return right_rotate(nd);
+            }
+        } else {
+            // Right height greater
+            auto right_balance_factor = get_balance_factor(nd->pRight_);
+            if (right_balance_factor < 0) {
+                // right-right case
+                return left_rotate(nd);
+            } else {
+                // right-left case
+                nd->pRight_ = right_rotate(nd->pRight_);
+                return left_rotate(nd);
+            }
+        }
+    }
+};
+
 class query {
 public:
     template<typename T>
@@ -284,31 +286,6 @@ public:
             return nullptr;
         }
     }
-
-//    template<typename node_type, typename value_type>
-//    void put(Str key, node_type *nd, node_type *parent, value_type value, threadinfo &ti) {
-//        if (nd == nullptr) {
-//            // New node
-//            value_type *newValue = (value_type *) ti.pool_allocate(sizeof(value_type), memtag_value);
-//
-//            auto new_node = node_type::make(key, ti);
-//            new_node->pValue_ = new value_type(value);
-//
-//            if (parent == nullptr) {
-//                return new_node;
-//            }
-//        }
-//
-//        int cmp = key.compare(nd->key_);
-//
-//        if (cmp == 0) {
-//
-//        } else if (cmp > 1) {
-//
-//        } else {
-//
-//        }
-//    }
 
     template<typename T>
     void put(T &tree, Str key, typename T::value_type value, threadinfo &ti) {
@@ -348,7 +325,7 @@ public:
                                           nullptr, newNode)) {
                 c.node_ = newNode;
 
-                // Balance
+                //  Balance
                 auto prev = newNode;
                 while (!stk.empty()) {
                     auto el = stk.top();
@@ -359,10 +336,12 @@ public:
                     } else {
                         el.p_node->pLeft_ = prev;
                     }
-                    el.p_node = el.p_node->balance_height(el.p_node);
+
                     el.p_node->recompute_height();
-                    prev = el.p_node;
+                    prev = AVLHelpers<node_type>::balance_height(el.p_node);
                 }
+
+                tree.set_root(prev);
             } else {
                 goto retry;
             }
