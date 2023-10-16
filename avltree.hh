@@ -19,7 +19,7 @@ using lcdf::Str;
 using lcdf::String;
 using std::max;
 using std::stack;
-typedef uint32_t height_t;
+typedef int64_t height_t;
 
 template<size_t KeySize = 16>
 struct tree_params {
@@ -102,9 +102,9 @@ using node_type = node<P>;
 public:
 key_type key_;
 value_type *pValue_;
-node<P> *pLeft_;
-node<P> *pRight_;
-height_t height_ = 0;
+node<P> *pLeft_ = nullptr;
+node<P> *pRight_ = nullptr;
+height_t height_ = 1;
 
 node_type *child(int direction) {
     assert(direction != 0);
@@ -115,8 +115,12 @@ node_type *child(int direction) {
     return pLeft_;
 }
 
-static inline height_t get_height(node_type *node) {
+static height_t get_height(node_type *node) {
     return node == nullptr ? 0 : node->height_;
+}
+
+static height_t get_balance_factor(node_type *nd) {
+    return node::get_height(nd->pLeft_) - node::get_height(nd->pRight_);
 }
 
 void recompute_height() {
@@ -147,18 +151,12 @@ static node_type *right_rotate(node_type *nd) {
     return left_node;
 }
 
-static inline height_t get_balance_factor(node_type *nd) {
-    return node::get_height(nd->pLeft_) - node::get_height(nd->pRight_);
-}
-
 node_type *balance_height(node_type *nd) {
-    if (nd == nullptr) {
-        return nullptr;
-    }
+    if (nd == nullptr) return nullptr;
 
     auto balance_factor = get_balance_factor(nd);
 
-    if (abs((int)balance_factor) <= 1) return nd; // No need to balance
+    if (abs((int) balance_factor) <= 1) return nd; // No need to balance
 
     if (balance_factor > 0) {
         // Left height greater
@@ -348,7 +346,7 @@ public:
                                           nullptr, newNode)) {
                 c.node_ = newNode;
 
-                // Balance
+                //  Balance
                 auto prev = newNode;
                 while (!stk.empty()) {
                     auto el = stk.top();
@@ -359,8 +357,10 @@ public:
                     } else {
                         el.p_node->pLeft_ = prev;
                     }
-                    el.p_node = el.p_node->balance_height(el.p_node);
+
                     el.p_node->recompute_height();
+                    el.p_node = el.p_node->balance_height(el.p_node);
+                    std::cout << "Recomputed height: " << el.p_node->height_;
                     prev = el.p_node;
                 }
             } else {

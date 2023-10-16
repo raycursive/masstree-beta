@@ -13,6 +13,20 @@
       "machine": "ubuntu",
       "cores": 1,
       "runs": ["x1\/rw1\/fourtree\/0"]
+    },
+    "x2": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Sun Oct 15 04:51:43 2023",
+      "machine": "ubuntu",
+      "cores": 1,
+      "runs": ["x2\/rw1\/binarytree\/0"]
+    },
+    "x3": {
+      "git-revision": "576a7adaa5356ce1be422ff7b63b6761d1bdbf7dM",
+      "time": "Sun Oct 15 19:20:26 2023",
+      "machine": "ubuntu",
+      "cores": 10,
+      "runs": ["x3\/rw1\/mb\/0"]
     }
   },
   "data": {
@@ -21,6 +35,21 @@
     ],
     "x1\/rw1\/fourtree\/0": [
       {"table":"fourtree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x2\/rw1\/binarytree\/0": [
+      {"table":"binarytree","test":"rw1","trial":0,"thread":0}
+    ],
+    "x3\/rw1\/mb\/0": [
+      {"table":"mb","test":"rw1","trial":0,"thread":0},
+      {"table":"mb","test":"rw1","trial":0,"thread":1},
+      {"table":"mb","test":"rw1","trial":0,"thread":2},
+      {"table":"mb","test":"rw1","trial":0,"thread":3},
+      {"table":"mb","test":"rw1","trial":0,"thread":4},
+      {"table":"mb","test":"rw1","trial":0,"thread":5},
+      {"table":"mb","test":"rw1","trial":0,"thread":6},
+      {"table":"mb","test":"rw1","trial":0,"thread":7},
+      {"table":"mb","test":"rw1","trial":0,"thread":8},
+      {"table":"mb","test":"rw1","trial":0,"thread":9}
     ]
   }
 }
