@@ -85,13 +85,13 @@ private:
 template <typename P>
 class alignas(CACHE_LINE_SIZE) node
     : public nodeversion<nodeversion_parameters<typename P::nodeversion_value_type>> {
+public:
   using key_type = fix_sized_key<P::ikey_size>;
   using value_type = typename P::value_type;
   using threadinfo = typename P::threadinfo_type;
   using node_type = node<P>;
   using nodeversion_type = nodeversion<nodeversion_parameters<typename P::nodeversion_value_type>>;
 
-public:
   // first cacheline contains first 8 bytes of keys and 4 children
   uint64_t keys0_[P::fanout - 1] = {};
   node<P> *children_[P::fanout] = {};
@@ -116,7 +116,7 @@ public:
   }
 
   void assign(const key_type &k, Str v, size_t index, threadinfo &ti) {
-    value_type* pNewValue = value_type::create1(v, 0, ti);
+    value_type *pNewValue = value_type::create1(v, 0, ti);
     // value_type *pNewValue =
     //     (value_type *)ti.pool_allocate(sizeof(value_type), memtag_value);
     // new (pNewValue) value_type(v);
@@ -124,15 +124,19 @@ public:
     keys1_[index] = k.ikey_u.ikey[1];
     value_type *oldValue = values_[index];
     values_[index] = pNewValue;
-    if (oldValue != nullptr) {
+    if   (oldValue != nullptr) {
       // ti.pool_deallocate(oldValue, sizeof(value_type), memtag_value);
-        oldValue->deallocate_rcu(ti);
+      oldValue->deallocate_rcu(ti);
     }
   }
-
   node_type *route(const key_type &k, size_t &index) const {
+    nodeversion_type v_;
+    return this->route(k, index, v_);
+  }
+
+  node_type *route(const key_type &k, size_t &index, nodeversion_type &v) const {
     retry:
-    auto v = this->stable();
+    v = this->stable();
     for (int i = 0; i < P::fanout - 1; i++) {
       // no value in current index
       if (values_[i] == nullptr) {
@@ -205,17 +209,25 @@ public:
   }
 
   void find_locked() {
-    node_ = const_cast<node_type *>(root_);
-    forward:
+    retry:
+    if (!parent_) {
+      node_ = const_cast<node_type *>(root_);
+    } else {
+      node_ = parent_;
+    }
+    index_ = 0;
+    typename node_type::nodeversion_type v_;
     while (node_) {
-      node_->lock();
-      if (parent_) {
-        parent_->unlock();
-      }
       index_ = 0;
-      node_type *next = node_->route(k_, index_);
+      node_type *next = node_->route(k_, index_, v_);
       if (next == node_) {
         // found the existed node
+        if (unlikely(node_->has_changed(v_))) {
+          goto retry;
+        }
+        if (!node_->try_lock()) {
+          goto retry;
+        }
         pv_ = node_->values_[index_];
         return;
       } else {
@@ -224,6 +236,12 @@ public:
       }
     }
     // reach an empty node
+    if (unlikely(parent_->has_changed(v_))) {
+      goto retry;
+    }
+    if (!parent_->try_lock()) {
+      goto retry;
+    }
   }
 
 private:
