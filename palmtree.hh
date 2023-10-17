@@ -19,14 +19,15 @@ namespace palmtree {
 using lcdf::Str;
 using lcdf::String;
 using std::max;
-using std::stack;
+using std::string;
+using std::stoi;
 typedef int64_t height_t;
 
 template<size_t KeySize = 16>
 struct tree_params {
     static constexpr int ikey_size = KeySize;
     static constexpr bool enable_int_cmp = true;
-    using value_type = std::string;
+    using value_type = Str;
     using threadinfo_type = ::threadinfo;
 };
 
@@ -43,17 +44,18 @@ public:
     using parameter_type = P;
     using node_type = node<P>;
     using value_type = typename P::value_type;
-    using key_type = Str;//fix_sized_key<P::ikey_size, P::enable_int_cmp>;
+    // using value_type = int64_t;
+    using key_type = int64_t;//fix_sized_key<P::ikey_size, P::enable_int_cmp>;
     using threadinfo = typename P::threadinfo_type;
     using cursor_type = cursor<P>;
 
-    PalmTree<Str, Str> *ptree;
+    PalmTree<key_type, value_type> *ptree;
 
     inline palm_tree() {}
 
     void initialize(threadinfo &ti) {
         // tree = new PalmTree(1, 1);
-        PalmTree<Str, Str> newTree("", 1);
+        PalmTree<key_type, value_type> newTree(std::numeric_limits<int>::min(), 1);
         ptree = &newTree;
     }
 
@@ -80,8 +82,9 @@ public:
     template<typename T>
     Str *get(T &tree, Str key) {
         Str res = "NADA_YADA";
+        int64_t k = stoi(key.data());
 
-        if (tree.ptree->find(key, res)) {
+        if (tree.ptree->find(k, res)) {
             return &res;
         } else {
             return nullptr;
@@ -92,8 +95,9 @@ public:
     void put(T &tree, Str key, typename T::value_type value, threadinfo &ti) {
         using value_type = typename T::value_type;
         using node_type = typename T::node_type;
+        int64_t k = stoi(key.data());
 
-        tree.ptree->insert(key, value);
+        tree.ptree->insert(k, value);
     }
 };
 

@@ -191,13 +191,13 @@ namespace palmtree {
       }
 
       virtual std::string to_string() {
-        std::string res;
-        res += "LeafNode[" + std::to_string(Node::id) + " @ " + std::to_string(Node::level) + "] ";
+        // std::string res;
+        // res += "LeafNode[" + std::to_string(Node::id) + " @ " + std::to_string(Node::level) + "] ";
 
-        for (int i = 0 ; i < Node::slot_used ; i++) {
-          res += " " + std::to_string(keys[i]) + ":" + std::to_string(values[i]);
-        }
-        return res;
+        // for (int i = 0 ; i < Node::slot_used ; i++) {
+        //   res += " " + std::to_string(keys[i]) + ":" + std::to_string(values[i]);
+        // }
+        return "";
       }
 
       inline bool is_full() const {
