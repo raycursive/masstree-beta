@@ -1,6 +1,8 @@
 #ifndef HASH
 #define HASH
 
+#include "../str.hh"
+
 /*!
  * Hash the given value depending on its type. 
  * This function is made to be template-specialized. 
@@ -16,6 +18,12 @@ int hash(T value);
 template<>
 inline int hash<int>(int value){
     return value;
+}
+
+template<>
+inline int hash<Str>(Str value) {
+    std::string s(value.data());
+    return stoi(s);
 }
 
 #endif

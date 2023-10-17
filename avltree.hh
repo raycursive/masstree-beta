@@ -83,6 +83,11 @@ private:
     }
 };
 
+template<typename P>
+void avl_tree<P>::initialize(threadinfo &ti) {
+    // root_ = node_type::make("", ti);
+}
+
 class query {
 public:
     template<typename T>

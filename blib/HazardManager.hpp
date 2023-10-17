@@ -7,7 +7,7 @@
 
 //Thread local id
 //Note: __thread is GCC specific
-extern __thread unsigned int thread_num;
+__thread unsigned int thread_num;
 
 #include <list>
 #include <array>
