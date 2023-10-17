@@ -13,7 +13,7 @@
 #include <stack>
 #include <algorithm>
 #include <utility>
-#include "blib/AVLTree.hpp"
+#include "blib/AVLOld.hpp"
 
 namespace avltree {
 using lcdf::Str;
@@ -94,8 +94,9 @@ public:
     typename T::value_type *get(T &tree, Str key) {
         //  using value_type = T::value_type;
          string *value = nullptr;
+         string k(key.data());
 
-         if(tree.tree_obj.get(key, value)) {
+         if(tree.tree_obj.get(k, value)) {
             return value;
          } else {
             return nullptr;
@@ -104,7 +105,10 @@ public:
 
     template<typename T>
     void put(T &tree, Str key, typename T::value_type value, threadinfo &ti) {
-        tree.tree_obj.add(key, value, ti);
+        value_type *val_p = (value_type *) ti.pool_allocate(sizeof(value_type), memtag_value);
+        new(val_p) value_type(value);
+        string k(key.data());
+        tree.tree_obj.add(k, val_p);
     }
 };
 

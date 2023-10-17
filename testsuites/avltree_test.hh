@@ -60,9 +60,9 @@ MAKE_TESTRUNNER(avltree_test_client, uscale, kvtest_uscale(client));
 
 void avltree_test_client::get_check(Str key, Str expected) {
     auto v = q_.get(*table_, key);
-    if(v != nullptr) {
-        std::cout<<"one key";
-    }
+    // if(v != nullptr) {
+    //     std::cout<<"one key";
+    // }
 
     if (unlikely(v == nullptr)) {
         fail("get(%s) failed (expected %s)\n", String(key).printable().c_str(),
