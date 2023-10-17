@@ -42,11 +42,13 @@
 #include "binarytree_test.hh"
 #include "fourtree_test.hh"
 #include "avltree_test.hh"
+#include "palmtree_test.hh"
 
 using masstree_test_thread = test_thread<masstree_test_client>;
 using binarytree_test_thread = test_thread<binarytree_test_client>;
 using fourtree_test_thread = test_thread<fourtree_test_client>;
 using avltree_test_thread = test_thread<avltree_test_client>;
+using palmtree_test_thread = test_thread<palmtree_test_client>;
 
 static struct {
     const char *treetype;
@@ -56,7 +58,8 @@ static struct {
     { "masstree", masstree_test_thread::go, masstree_test_thread::setup },
     { "binarytree", binarytree_test_thread::go, binarytree_test_thread::setup },
     { "fourtree", fourtree_test_thread::go, fourtree_test_thread::setup },
-    { "avltree", avltree_test_thread ::go, avltree_test_thread ::setup }
+    { "avltree", avltree_test_thread ::go, avltree_test_thread ::setup },
+    { "palmtree", palmtree_test_thread ::go, palmtree_test_thread ::setup }
 };
 
 static void run_one_test_body(int trial, const char *treetype, const char *test) {
