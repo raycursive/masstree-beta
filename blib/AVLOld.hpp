@@ -15,7 +15,7 @@ using std::string;
 using lcdf::Str;
 using std::cout;
 using std::endl;
-using key_type = string;
+using key_type = int;
 using value_type = string;
 
 typedef std::lock_guard<std::mutex> scoped_lock;
@@ -128,6 +128,10 @@ class AVLTree {
         HazardManager<Node, Threads, 6> hazard;
         
         unsigned int Current[Threads];
+
+        static int compare_keys(key_type k1, key_type k2) {
+            return k1 - k2;
+        }
 };
 
 static Node* fixHeight_nl(Node* n);
@@ -136,7 +140,7 @@ static int nodeCondition(Node* node);
 
 template<typename T, int Threads>
 AVLTree<T, Threads>::AVLTree(){
-    rootHolder = newNode("__root__");
+    rootHolder = newNode(0);
 
     for(unsigned int i = 0; i < Threads; ++i){
         Current[i] = 0;
@@ -219,7 +223,7 @@ bool AVLTree<T, Threads>::get(key_type key, value_type* &val_p){
         if(!right){
             return false;
         } else {
-            int rightCmp = key.compare(right->key);
+            int rightCmp = compare_keys(key, right->key);
             if(rightCmp == 0){
                 val_p = right->value;
                 return true;
@@ -251,7 +255,7 @@ Result AVLTree<T, Threads>::attemptGet(key_type key, Node* node, int dir, long n
 
             return NOT_FOUND;
         } else {
-            int childCmp = key.compare(child->key);
+            int childCmp = compare_keys(key, child->key);
             if(childCmp == 0){
                 val_p = child->value;
                 return child->value != nullptr ? FOUND : NOT_FOUND;//Verify that it's a value node
@@ -351,7 +355,7 @@ bool AVLTree<T, Threads>::attemptInsertIntoEmpty(key_type key, value_type* value
 
 template<typename T, int Threads>
 Result AVLTree<T, Threads>::attemptUpdate(key_type key, Function func, value_type* newValue, Node* parent, Node* node, long nodeOVL){
-    int cmp = key.compare(node->key);
+    int cmp = compare_keys(key, node->key);
     if(cmp == 0){
         return attemptNodeUpdate(func, newValue, parent, node);
     }

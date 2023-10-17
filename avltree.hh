@@ -15,6 +15,8 @@
 #include <utility>
 #include "blib/AVLOld.hpp"
 
+#define THREAD_COUNT 16
+
 namespace avltree {
 using lcdf::Str;
 using lcdf::String;
@@ -53,7 +55,7 @@ public:
     using threadinfo = typename P::threadinfo_type;
     using cursor_type = cursor<P>;
 
-    AVLTree<P, 1> tree_obj;
+    AVLTree<P, THREAD_COUNT> tree_obj;
 
     inline avl_tree() {}
 
@@ -94,7 +96,8 @@ public:
     typename T::value_type *get(T &tree, Str key) {
         //  using value_type = T::value_type;
          string *value = nullptr;
-         string k(key.data());
+        //  string k(key.data());
+        int k = std::stoi(key.data());
 
          if(tree.tree_obj.get(k, value)) {
             return value;
@@ -107,7 +110,8 @@ public:
     void put(T &tree, Str key, typename T::value_type value, threadinfo &ti) {
         value_type *val_p = (value_type *) ti.pool_allocate(sizeof(value_type), memtag_value);
         new(val_p) value_type(value);
-        string k(key.data());
+        int k = std::stoi(key.data());
+        // string k(key.data());
         tree.tree_obj.add(k, val_p);
     }
 };
