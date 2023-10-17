@@ -121,9 +121,12 @@ public:
       : parent_(nullptr), node_(nullptr), k_(key_type(key)), pv_(nullptr), root_(tree.root()) {}
 
   bool find() {
-    node_ = const_cast<node_type *>(root_);
+    return find_from(const_cast<node_type*>(root_));
+  }
+  
+  bool find_from(node_type* root) {
+    node_ = root;
     do {
-      acquire_fence();
       int cmp = k_.compare(node_->key_);
       if (cmp == 0) {
         pv_ = node_->pValue_;
@@ -168,10 +171,18 @@ public:
     // value_type *newValue = (value_type *)ti.pool_allocate(sizeof(value_type), memtag_value);
     // new (newValue) value_type(value);
 
-    retry:
     typename T::cursor_type c(tree, key);
     node_type *newNode = nullptr;
-    if (c.find()) {
+
+    retry:
+    bool found = false;
+    if (!c.parent_) {
+      found = c.find();
+    }
+    else {
+      found = c.find_from(c.parent_);
+    }
+    if (found) {
       // perform update
       release_fence();
       while (true) {
@@ -181,6 +192,7 @@ public:
         c.pv_ = c.node_->pValue_;
         relax_fence();
       }
+      acquire_fence();
       c.pv_->deallocate_rcu(ti);
       // ti.pool_deallocate(c.pv_, sizeof(value_type), memtag_value);
     } else {
@@ -195,6 +207,7 @@ public:
                                             : &c.parent_->pLeft_,
                                     nullptr, newNode)) {
         c.node_ = newNode;
+        acquire_fence();
       } else {
         goto retry;
       }
