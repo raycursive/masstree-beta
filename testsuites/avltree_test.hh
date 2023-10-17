@@ -47,7 +47,7 @@ public:
     }
 
 private:
-    avltree::query q_[1];
+    avltree::query q_;
 };
 
 MAKE_TESTRUNNER(avltree_test_client, simple, kvtest_simple(client));
@@ -59,7 +59,11 @@ MAKE_TESTRUNNER(avltree_test_client, rscale, kvtest_rscale(client));
 MAKE_TESTRUNNER(avltree_test_client, uscale, kvtest_uscale(client));
 
 void avltree_test_client::get_check(Str key, Str expected) {
-    auto v = q_[0].get(*table_, key);
+    auto v = q_.get(*table_, key);
+    if(v != nullptr) {
+        std::cout<<"one key";
+    }
+
     if (unlikely(v == nullptr)) {
         fail("get(%s) failed (expected %s)\n", String(key).printable().c_str(),
              String(expected).printable().c_str());
@@ -72,7 +76,7 @@ void avltree_test_client::get_check(Str key, Str expected) {
 }
 
 void avltree_test_client::get_check_absent(Str key) {
-    auto v = q_[0].get(*table_, key);
+    auto v = q_.get(*table_, key);
     if (unlikely(v != nullptr)) {
         fail("get(%s) failed (expected absent key)\n",
              String(key).printable().c_str());
@@ -80,10 +84,11 @@ void avltree_test_client::get_check_absent(Str key) {
 }
 
 void avltree_test_client::put(Str key, Str value) {
-    q_[0].put(*table_, key, value, *ti_);
+    q_.put(*table_, key, value, *ti_);
 }
 
 void avltree_test_client::insert_check(Str key, Str value) {
+    q_.put(*table_, key, value, *ti_);
 }
 
 #endif

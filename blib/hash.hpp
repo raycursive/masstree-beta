@@ -19,11 +19,4 @@ template<>
 inline int hash<int>(int value){
     return value;
 }
-
-template<>
-inline int hash<Str>(Str value) {
-    std::string s(value.data());
-    return stoi(s);
-}
-
 #endif

@@ -3,7 +3,6 @@
 
 #include <mutex>
 
-#include "hash.hpp"
 #include "HazardManager.hpp"
 #include "string.h"
 #include "../string.hh"
@@ -14,6 +13,8 @@ namespace avltree {
 using std::string;
 using key_type = Str;
 using value_type = string;
+using std::cout;
+using std::endl;
 
 typedef std::lock_guard<std::mutex> scoped_lock;
 
@@ -42,7 +43,7 @@ typedef string value_t;
 
 struct Node {
     int height;
-    int key;
+    key_type key;
     long version;
     value_type* value;
     Node* parent;
@@ -87,22 +88,22 @@ class AVLTree {
         ~AVLTree();
         
         bool contains(key_type k);
-        bool get(key_type k, value_type* val_p);
+        bool get(key_type k, value_type* &val_p);
         bool add(key_type k, value_type value, threadinfo &ti);
         bool remove(key_type k);
 
     private:
         /* Allocate new nodes */
-        Node* newNode(int key);
-        Node* newNode(int height, int key, long version, value_type* value, Node* parent, Node* left, Node* right);
+        Node* newNode(key_type key);
+        Node* newNode(int height, key_type key, long version, value_type* value, Node* parent, Node* left, Node* right);
 
         //Search
-        Result attemptGet(int key, Node* node, int dir, long nodeV, value_type* value);
+        Result attemptGet(key_type key, Node* node, int dir, long nodeV, value_type* &value);
 
         /* Update stuff  */
-        Result updateUnderRoot(int key, Function func, value_type* newValue, Node* holder);
-        bool attemptInsertIntoEmpty(int key, value_type* value, Node* holder);
-        Result attemptUpdate(int key, Function func, value_type* newValue, Node* parent, Node* node, long nodeOVL);
+        Result updateUnderRoot(key_type key, Function func, value_type* newValue, Node* holder);
+        bool attemptInsertIntoEmpty(key_type key, value_type* value, Node* holder);
+        Result attemptUpdate(key_type key, Function func, value_type* newValue, Node* parent, Node* node, long nodeOVL);
         Result attemptNodeUpdate(Function func, value_type* newValue, Node* parent, Node* node);
         bool attemptUnlink_nl(Node* parent, Node* node);
         
@@ -137,7 +138,7 @@ static int nodeCondition(Node* node);
 
 template<typename T, int Threads>
 AVLTree<T, Threads>::AVLTree(){
-    rootHolder = newNode(std::numeric_limits<int>::min());
+    rootHolder = newNode("__root__");
 
     for(unsigned int i = 0; i < Threads; ++i){
         Current[i] = 0;
@@ -165,13 +166,15 @@ void AVLTree<T, Threads>::releaseAll(){
 }
 
 template<typename T, int Threads>
-Node* AVLTree<T, Threads>::newNode(int key){
+Node* AVLTree<T, Threads>::newNode(key_type key){
+    cout <<"Created node for " << key << endl;
     return newNode(1, key, 0L, nullptr, nullptr, nullptr, nullptr);
 }
 
 template<typename T, int Threads>
-Node* AVLTree<T, Threads>::newNode(int height, int key, long version, value_type* value, Node* parent, Node* left, Node* right){
+Node* AVLTree<T, Threads>::newNode(int height, key_type key, long version, value_type* value, Node* parent, Node* left, Node* right){
     Node* node = hazard.getFreeNode();
+    cout <<"Created node for " << key << endl;
     
     node->height = height;
     node->key = key;
@@ -185,8 +188,7 @@ Node* AVLTree<T, Threads>::newNode(int height, int key, long version, value_type
 }
 
 template<typename T, int Threads>
-bool AVLTree<T, Threads>::contains(key_type value){
-    int key = hash(value);
+bool AVLTree<T, Threads>::contains(key_type key){
 
     while(true){
         Node* right = rootHolder->right;
@@ -194,7 +196,7 @@ bool AVLTree<T, Threads>::contains(key_type value){
         if(!right){
             return false;
         } else {
-            int rightCmp = key - right->key;
+            int rightCmp = key.compare(right->key);
             if(rightCmp == 0){
                 return right->value;
             }
@@ -213,17 +215,18 @@ bool AVLTree<T, Threads>::contains(key_type value){
 }
 
 template<typename T, int Threads>
-bool AVLTree<T, Threads>::get(key_type k, value_type* val_p){
-    int key = hash(k);
+bool AVLTree<T, Threads>::get(key_type key, value_type* &val_p){
 
     while(true){
         Node* right = rootHolder->right;
 
         if(!right){
+            std::cout<<"Not found"<<endl;
             return false;
         } else {
-            int rightCmp = key - right->key;
+            int rightCmp = key.compare(right->key);
             if(rightCmp == 0){
+                std::cout<<"Setting value"<<endl;
                 val_p = right->value;
                 return true;
             }
@@ -234,6 +237,7 @@ bool AVLTree<T, Threads>::get(key_type k, value_type* val_p){
             } else if(right == rootHolder->right){
                 Result vo = attemptGet(key, right, rightCmp, ovl, val_p);
                 if(vo != RETRY){
+                    std::cout<<"Found "<<vo<< " " << val_p<<endl;
                     return true;
                 }
             }
@@ -242,7 +246,7 @@ bool AVLTree<T, Threads>::get(key_type k, value_type* val_p){
 }
 
 template<typename T, int Threads>
-Result AVLTree<T, Threads>::attemptGet(int key, Node* node, int dir, long nodeV, value_type* value){
+Result AVLTree<T, Threads>::attemptGet(key_type key, Node* node, int dir, long nodeV, value_type* &value){
     while(true){
         Node* child = node->child(dir);
 
@@ -253,10 +257,12 @@ Result AVLTree<T, Threads>::attemptGet(int key, Node* node, int dir, long nodeV,
 
             return NOT_FOUND;
         } else {
-            int childCmp = key - child->key;
+            int childCmp = key.compare(child->key);
+            cout<<"childcmp " << childCmp <<endl;
             if(childCmp == 0){
+                std::cout<<"Setting value"<<endl;
                 value = child->value;
-                return child->value == nullptr ? FOUND : NOT_FOUND;//Verify that it's a value node
+                return child->value != nullptr ? FOUND : NOT_FOUND;//Verify that it's a value node
             }
 
             long childOVL = child->version;
@@ -300,22 +306,23 @@ template<typename T, int Threads>
 bool AVLTree<T, Threads>::add(key_type k, value_type value, threadinfo &ti){
     value_type *val_p = (value_type *) ti.pool_allocate(sizeof(value_type), memtag_value);
     new(val_p) value_type(value);
-    return updateUnderRoot(hash(k), UpdateIfAbsent, val_p, rootHolder) == NOT_FOUND;
+    cout<< "Add " << k << " " << value <<endl;
+    return updateUnderRoot(k, UpdateIfAbsent, val_p, rootHolder) == NOT_FOUND;
 }
 
 template<typename T, int Threads>
 bool AVLTree<T, Threads>::remove(key_type k){
-    return updateUnderRoot(hash(k), UpdateIfPresent, nullptr, rootHolder) == FOUND;
+    return updateUnderRoot(k, UpdateIfPresent, nullptr, rootHolder) == FOUND;
 }
 
 template<typename T, int Threads>
-Result AVLTree<T, Threads>::updateUnderRoot(int key, Function func, value_type *newValue, Node* holder){
+Result AVLTree<T, Threads>::updateUnderRoot(key_type key, Function func, value_type *newValue, Node* holder){
     while(true){
         Node* right = holder->right;
 
         if(!right){
             if(newValue == nullptr || attemptInsertIntoEmpty(key, newValue, holder)){
-                return updateResult(func, nullptr);
+                return updateResult(func, newValue);
             }
         } else {
             long ovl = right->version;
@@ -323,8 +330,10 @@ Result AVLTree<T, Threads>::updateUnderRoot(int key, Function func, value_type *
             if(isShrinkingOrUnlinked(ovl)){
                 waitUntilNotChanging(right);
             } else if(right == holder->right){
+                cout <<"Attempt update 1 " << key << " " << holder->key <<  " " << right->key << endl;
                 Result vo = attemptUpdate(key, func, newValue, holder, right, ovl);
                 if(vo != RETRY){
+                    cout << "vo " << vo << endl;
                     return vo;   
                 }
             }
@@ -333,13 +342,16 @@ Result AVLTree<T, Threads>::updateUnderRoot(int key, Function func, value_type *
 }
 
 template<typename T, int Threads>
-bool AVLTree<T, Threads>::attemptInsertIntoEmpty(int key, value_type* value, Node* holder){
+bool AVLTree<T, Threads>::attemptInsertIntoEmpty(key_type key, value_type* value, Node* holder){
     publish(holder);
     scoped_lock lock(holder->lock);
+
+    cout << "insert into empty " << key << endl;
 
     if(!holder->right){
         holder->right = newNode(1, key, 0, value, holder, nullptr, nullptr);
         holder->height = 2;
+        cout << "Inserted" << holder->right <<endl;
         releaseAll();
         return true;
     } else {
@@ -349,21 +361,26 @@ bool AVLTree<T, Threads>::attemptInsertIntoEmpty(int key, value_type* value, Nod
 }
 
 template<typename T, int Threads>
-Result AVLTree<T, Threads>::attemptUpdate(int key, Function func, value_type* newValue, Node* parent, Node* node, long nodeOVL){
-    int cmp = key - node->key;
+Result AVLTree<T, Threads>::attemptUpdate(key_type key, Function func, value_type* newValue, Node* parent, Node* node, long nodeOVL){
+    cout <<"Attempt update " << key << " " << node->key << endl;
+    int cmp = key.compare(node->key);
     if(cmp == 0){
+        cout <<"Attempt node update " << key << " " << node->key << endl;
         return attemptNodeUpdate(func, newValue, parent, node);
     }
 
     while(true){
         Node* child = node->child(cmp);
+        cout <<"Found child as " << child << endl;
 
         if(node->version != nodeOVL){
             return RETRY;
         }
 
         if(!child){
+            cout <<"No child found " << endl;
             if(newValue == nullptr){
+                cout << "New value is nullptr" <<endl;
                 return NOT_FOUND;
             } else {
                 bool success;
@@ -393,11 +410,13 @@ Result AVLTree<T, Threads>::attemptUpdate(int key, Function func, value_type* ne
                 }
 
                 if(success){
+                    cout << "successful" << endl;
                     fixHeightAndRebalance(damaged);
                     return updateResult(func, nullptr);
                 }
             }
         } else {
+            cout <<"Going to child " << child->key << endl;
             long childOVL = child->version;
 
             if(isShrinkingOrUnlinked(childOVL)){
@@ -422,6 +441,7 @@ template<typename T, int Threads>
 Result AVLTree<T, Threads>::attemptNodeUpdate(Function func, value_type* newValue, Node* parent, Node* node){
     if(newValue == nullptr){
         if(node->value == nullptr){
+            cout << "nv nullptr" << endl;
             return NOT_FOUND;
         }
     }
@@ -445,10 +465,10 @@ Result AVLTree<T, Threads>::attemptNodeUpdate(Function func, value_type* newValu
                 
                 prev = node->value;
 
-                if(prev == nullptr){
-                    releaseAll();
-                    return updateResult(func, prev);
-                }
+                // if(prev == nullptr){
+                //     releaseAll();
+                //     return updateResult(func, prev);
+                // }
 
                 if(!attemptUnlink_nl(parent, node)){
                     releaseAll();
@@ -462,7 +482,7 @@ Result AVLTree<T, Threads>::attemptNodeUpdate(Function func, value_type* newValu
         }
 
         fixHeightAndRebalance(damaged);
-
+        cout << "ret 1" <<endl;
         return updateResult(func, prev);
     } else {
         publish(node);
@@ -483,6 +503,7 @@ Result AVLTree<T, Threads>::attemptNodeUpdate(Function func, value_type* newValu
         node->value = newValue;
         
         releaseAll();
+        cout << "ret 2" <<endl;
         return updateResult(func, prev);
     }
 }
