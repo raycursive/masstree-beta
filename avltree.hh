@@ -30,15 +30,6 @@ using std::max;
 using std::stack;
 typedef int64_t height_t;
 
-template<size_t KeySize = 16>
-struct tree_params {
-    static constexpr int ikey_size = KeySize;
-    static constexpr bool enable_int_cmp = true;
-    using value_type = std::string;
-    using threadinfo_type = ::threadinfo;
-};
-
-
 template<typename P>
 class node;
 
@@ -51,7 +42,7 @@ public:
     using parameter_type = P;
     using node_type = node<P>;
     using value_type = typename P::value_type;
-    using key_type = fix_sized_key<P::ikey_size, P::enable_int_cmp>;
+    using key_type = typename P::key_type;
     using threadinfo = typename P::threadinfo_type;
     using cursor_type = cursor<P>;
 
@@ -95,11 +86,11 @@ public:
     template<typename T>
     typename T::value_type *get(T &tree, Str key) {
         //  using value_type = T::value_type;
-         string *value = nullptr;
+        typename T::value_type *value = nullptr;
         //  string k(key.data());
-        int k = std::stoi(key.data());
+        // int k = std::stoi(key.data());
 
-         if(tree.tree_obj.get(k, value)) {
+         if(tree.tree_obj.get(key, value)) {
             return value;
          } else {
             return nullptr;
@@ -107,16 +98,15 @@ public:
     }
 
     template<typename T>
-    void put(T &tree, Str key, typename T::value_type value, threadinfo &ti) {
-        value_type *val_p = (value_type *) ti.pool_allocate(sizeof(value_type), memtag_value);
-        new(val_p) value_type(value);
-        int k = std::stoi(key.data());
+    void put(T &tree, Str key, Str value, threadinfo &ti) {
+        value_type* val_p = value_type::create1(value, 0, ti);
+        
         // string k(key.data());
-        tree.tree_obj.add(k, val_p);
+        tree.tree_obj.add(key, val_p);
     }
 };
 
-using default_table = avl_tree <tree_params<16>>;
+using default_table = avl_tree <tree_params>;
 // static_assert(sizeof(default_table::node_type) == 40,
 //               "binary tree node size is not 40 bytes");
 } // namespace avltree

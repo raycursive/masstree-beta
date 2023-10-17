@@ -4,19 +4,33 @@
 #include <mutex>
 
 #include "hash.hpp"
+#include "../fixsizedkey.hh"
+#include "../kvrow.hh"
 #include "HazardManager.hpp"
 #include "HazardManager.hpp"
 #include "../str.hh"
 #include "../kvthread.hh"
 #include "../mtcounters.hh"
 
+#define KEY_SIZE 16
+
 namespace avltree {
 using std::string;
 using lcdf::Str;
 using std::cout;
 using std::endl;
-using key_type = int;
-using value_type = string;
+
+struct tree_params {
+    static constexpr int ikey_size = 16;
+    static constexpr bool enable_int_cmp = true;
+    using value_type = row_type;
+    using threadinfo_type = ::threadinfo;
+    using key_type = fix_sized_key<ikey_size, enable_int_cmp>;
+};
+
+using key_type = tree_params::key_type;
+using value_type = tree_params::value_type;
+
 
 typedef std::lock_guard<std::mutex> scoped_lock;
 
@@ -130,7 +144,7 @@ class AVLTree {
         unsigned int Current[Threads];
 
         static int compare_keys(key_type k1, key_type k2) {
-            return k1 - k2;
+            return k1.compare(k2);
         }
 };
 
@@ -140,7 +154,7 @@ static int nodeCondition(Node* node);
 
 template<typename T, int Threads>
 AVLTree<T, Threads>::AVLTree(){
-    rootHolder = newNode(0);
+    rootHolder = newNode(key_type("__root__"));
 
     for(unsigned int i = 0; i < Threads; ++i){
         Current[i] = 0;
