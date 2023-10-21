@@ -18,22 +18,6 @@ def create_parser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    parser.add_argument(
-        "-tid", "--test-id",
-        dest="test_id",
-        action="store",
-        required=False,
-        default=str(round(int(datetime.datetime.utcnow().timestamp())))
-    )
-
-    parser.add_argument(
-        "-rdir", "--results-dir",
-        dest="results_dir",
-        action="store",
-        required=False,
-        default="./test_results"
-    )
-
     # Test parser
     test_parser = subparsers.add_parser("test")
 
@@ -51,6 +35,30 @@ def create_parser():
         required=True
     )
 
+    test_parser.add_argument(
+        "-tid", "--test-id",
+        dest="test_id",
+        action="store",
+        required=False,
+        default=str(round(int(datetime.datetime.utcnow().timestamp())))
+    )
+
+    test_parser.add_argument(
+        "-rdir", "--results-dir",
+        dest="results_dir",
+        action="store",
+        required=False,
+        default="./test_results"
+    )
+
+    test_parser.add_argument(
+        "-rb", "--rebuild",
+        dest="rebuild",
+        action="store_true",
+        required=False,
+        default=False
+    )
+
     # Plot parser
     plot_parser = subparsers.add_parser("plot")
 
@@ -59,6 +67,23 @@ def create_parser():
         dest="source",
         action="store",
         required=True
+    )
+
+    # Repeated, but fine
+    plot_parser.add_argument(
+        "-tid", "--test-id",
+        dest="test_id",
+        action="store",
+        required=False,
+        default="tst"
+    )
+
+    plot_parser.add_argument(
+        "-rdir", "--results-dir",
+        dest="results_dir",
+        action="store",
+        required=False,
+        default="./test_results"
     )
 
     return parser
@@ -99,7 +124,7 @@ class ReportGenerator:
                     data[k].append(round(statistics.mean([row[k] for row in rows if k in row]), 2))
 
             title = f"Test {test_name}"
-            res_fig_path = os.path.join(results_dir, f"fig_{test_name.replace(',','_')}_{test_id}.png")
+            res_fig_path = os.path.join(results_dir, f"fig_{test_name.replace(',', '_')}_{test_id}.png")
             self.__plot_res(title, data_structs, data, res_fig_path)
 
     @staticmethod
@@ -165,28 +190,37 @@ def execute_and_collect_data(test_id, ds: str, tests_list, results_dir, report_g
             handle.flush()
 
 
+def get_uniq_test_id(tid):
+    return f"{tid}_{round(int(datetime.datetime.utcnow().timestamp()))}"
+
+
 def handle_test(args):
-    results_base = os.path.join(args.results_dir, args.test_id)
+    if args.rebuild:
+        subprocess.run("make")
+
+    test_id = get_uniq_test_id(args.test_id)
+    results_base = os.path.join(args.results_dir, test_id)
     os.makedirs(results_base, exist_ok=True)
 
     ds_list = args.ds_list.split(',')
     report_gen = ReportGenerator()
 
     for ds in ds_list:
-        execute_and_collect_data(args.test_id, ds, args.tests_list, results_base, report_gen)
+        execute_and_collect_data(test_id, ds, args.tests_list, results_base, report_gen)
 
-    res_json_file_path = os.path.join(results_base, f"results_{args.test_id}.json")
+    res_json_file_path = os.path.join(results_base, f"results_{test_id}.json")
     report_gen.store_results(res_json_file_path)
-    report_gen.plot_results(args.test_id, results_base)
+    report_gen.plot_results(test_id, results_base)
 
 
 def handle_plot(args):
+    test_id = get_uniq_test_id(args.test_id)
     report_gen = ReportGenerator()
     report_gen.load_from_file(args.source)
 
-    results_base = os.path.join(args.results_dir, args.test_id)
+    results_base = os.path.join(args.results_dir, test_id)
     os.makedirs(results_base, exist_ok=True)
-    report_gen.plot_results(args.test_id, results_base)
+    report_gen.plot_results(test_id, results_base)
 
 
 def handle_cli():
