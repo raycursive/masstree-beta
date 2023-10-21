@@ -72,7 +72,7 @@ class ReportGenerator:
         with open(file_path) as handle:
             self.__res = json.loads(handle.read())
 
-    def parse_res_line(self, line, ds):
+    def parse_res_line(self, line, ds, test):
         if ':' not in line:
             return
 
@@ -81,13 +81,13 @@ class ReportGenerator:
             return
 
         res_json = json.loads(possible_res)
-        self.__res[res_json["test"]][ds].append(res_json)
+        self.__res[test][ds].append(res_json)
 
     def store_results(self, file_path):
         with open(file_path, 'w') as handle:
             handle.write(json.dumps(self.__res))
 
-    def plot_results(self, res_fig_path):
+    def plot_results(self, test_id, results_dir):
         for test_name in self.__res:
             data_structs = []
             data = {k: [] for k in COLLECT_KEYS}
@@ -96,9 +96,10 @@ class ReportGenerator:
                 data_structs.append(ds)
 
                 for k in COLLECT_KEYS:
-                    data[k].append(round(statistics.mean([row[k] for row in rows]), 2))
+                    data[k].append(round(statistics.mean([row[k] for row in rows if k in row]), 2))
 
             title = f"Test {test_name}"
+            res_fig_path = os.path.join(results_dir, f"fig_{test_name.replace(',','_')}_{test_id}.png")
             self.__plot_res(title, data_structs, data, res_fig_path)
 
     @staticmethod
@@ -145,23 +146,23 @@ def get_command(ds, tests_list):
 def execute_and_collect_data(test_id, ds: str, tests_list, results_dir, report_gen: ReportGenerator):
     """
     :param ds: <ds_name>:<threads_cnt>
+    :param tests_list: space seperated list of test_confs
     """
     res_file_path = os.path.join(results_dir, f"raw_{test_id}.txt")
-    command = get_command(ds, tests_list)
-
-    print("Executing:", command)
-    proc = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
     with open(res_file_path, 'a') as handle:
-        for line in proc.stderr:
-            line = line.decode('utf-8')
-            handle.write(line)
-            report_gen.parse_res_line(line, ds)
-            print(line.rstrip())  # See output
+        for test in tests_list.split(' '):
+            command = get_command(ds, test)
+            print(f"Executing for {ds} {test}. cmd: {command}")
+            proc = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        handle.flush()
+            for line in proc.stderr:
+                line = line.decode('utf-8')
+                handle.write(line)
+                report_gen.parse_res_line(line, ds, test)
+                print(line.rstrip())  # See output
 
-    print("Done")
+            print("Done")
+            handle.flush()
 
 
 def handle_test(args):
@@ -175,9 +176,8 @@ def handle_test(args):
         execute_and_collect_data(args.test_id, ds, args.tests_list, results_base, report_gen)
 
     res_json_file_path = os.path.join(results_base, f"results_{args.test_id}.json")
-    res_fig_path = os.path.join(results_base, f'fig_{args.test_id}.png')
     report_gen.store_results(res_json_file_path)
-    report_gen.plot_results(res_fig_path)
+    report_gen.plot_results(args.test_id, results_base)
 
 
 def handle_plot(args):
@@ -186,8 +186,7 @@ def handle_plot(args):
 
     results_base = os.path.join(args.results_dir, args.test_id)
     os.makedirs(results_base, exist_ok=True)
-    res_fig_path = os.path.join(results_base, f'fig_{args.test_id}.png')
-    report_gen.plot_results(res_fig_path)
+    report_gen.plot_results(args.test_id, results_base)
 
 
 def handle_cli():
