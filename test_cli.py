@@ -75,7 +75,7 @@ class ReportGenerator:
         with open(file_path, 'w') as handle:
             handle.write(json.dumps(self.__res))
 
-    def plot_results(self, test_id, results_dir):
+    def plot_results(self, test_id, results_dir, threads_count):
         for test_name in self.__res:
             data_structs = []
             data = {k: [] for k in COLLECT_KEYS}
@@ -87,10 +87,11 @@ class ReportGenerator:
                     data[k].append(statistics.mean([row[k] for row in rows]) / 1000)  # Kilo ops
 
             res_fig_path = os.path.join(results_dir, f'fig_{test_id}.png')
-            self.__plot_res(test_name, data_structs, data, res_fig_path)
+            title = f"Test {test_name} with {threads_count} threads"
+            self.__plot_res(title, data_structs, data, res_fig_path)
 
     @staticmethod
-    def __plot_res(test_name, data_structs, data, res_fig_path):
+    def __plot_res(title, data_structs, data, res_fig_path):
         x = np.arange(len(data_structs))  # the label locations
         width = 0.25  # the width of the bars
         multiplier = 0
@@ -107,7 +108,7 @@ class ReportGenerator:
 
         # Add some text for labels, title and custom x-axis tick labels, etc.
         ax.set_ylabel('Throughput per thread per second (K)')
-        ax.set_title(f'Test {test_name}')
+        ax.set_title(title)
         ax.set_xticks(x + width, data_structs)
         ax.legend(loc='upper left')
         ax.set_ylim(0, max_measurement + 1000)
@@ -149,7 +150,7 @@ def handle_cli():
 
     res_json_file_path = os.path.join(results_base, f"results_{args.test_id}.json")
     report_gen.store_results(res_json_file_path)
-    report_gen.plot_results(args.test_id, results_base)
+    report_gen.plot_results(args.test_id, results_base, threads_count)
 
 
 if __name__ == "__main__":
