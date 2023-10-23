@@ -59,6 +59,14 @@ def create_parser():
         default=False
     )
 
+    test_parser.add_argument(
+        "-p", "--props",
+        dest="plot_props",
+        action="store",
+        required=False,
+        default=""
+    )
+
     # Plot parser
     plot_parser = subparsers.add_parser("plot")
 
@@ -84,6 +92,14 @@ def create_parser():
         action="store",
         required=False,
         default="./test_results"
+    )
+
+    plot_parser.add_argument(
+        "-p", "--props",
+        dest="plot_props",
+        action="store",
+        required=False,
+        default=""
     )
 
     return parser
@@ -112,7 +128,7 @@ class ReportGenerator:
         with open(file_path, 'w') as handle:
             handle.write(json.dumps(self.__res))
 
-    def plot_results(self, test_id, results_dir):
+    def plot_results(self, test_id, results_dir, plot_props=None):
         for test_name in self.__res:
             data_structs = []
             data = {k: [] for k in COLLECT_KEYS}
@@ -125,10 +141,11 @@ class ReportGenerator:
 
             title = f"Test {test_name}"
             res_fig_path = os.path.join(results_dir, f"fig_{test_name.replace(',', '_')}_{test_id}.png")
-            self.__plot_res(title, data_structs, data, res_fig_path)
+            self.__plot_res(title, data_structs, data, res_fig_path, plot_props)
 
     @staticmethod
-    def __plot_res(title, data_structs, data, res_fig_path):
+    def __plot_res(title, data_structs, data, res_fig_path, plot_props=None):
+        plot_props = ReportGenerator.parse_props(plot_props)
         x = np.arange(len(data_structs))  # the label locations
         width = 0.25  # the width of the bars
         multiplier = 0
@@ -150,11 +167,25 @@ class ReportGenerator:
         ax.set_xticks(x + width, data_structs)
         ax.legend(loc='upper left')
         # ax.set_ylim(0, max_measurement + 2)
-        ax.set_ylim(0, 2)
+        ax.set_ylim(0, int(plot_props.get("max_y", 2)))
 
         plt.table(cellText=list(data.values()), cellLoc="center", rowLabels=COLLECT_KEYS, bbox=[0.0, -0.45, 1, .28])
         fig.set_size_inches(8, 6)
         plt.savefig(res_fig_path, bbox_inches='tight', dpi=100)
+
+    @staticmethod
+    def parse_props(plot_props):
+        plot_props = plot_props or ''
+        print(plot_props)
+        props = {}
+
+        for prop in plot_props.split(';'):
+            if not prop:
+                continue
+            k, v = prop.split('=')
+            props[k] = v
+
+        return props
 
 
 def get_command(ds, tests_list):
@@ -210,7 +241,7 @@ def handle_test(args):
 
     res_json_file_path = os.path.join(results_base, f"results_{test_id}.json")
     report_gen.store_results(res_json_file_path)
-    report_gen.plot_results(test_id, results_base)
+    report_gen.plot_results(test_id, results_base, args.plot_props)
 
 
 def handle_plot(args):
@@ -220,7 +251,7 @@ def handle_plot(args):
 
     results_base = os.path.join(args.results_dir, test_id)
     os.makedirs(results_base, exist_ok=True)
-    report_gen.plot_results(test_id, results_base)
+    report_gen.plot_results(test_id, results_base, args.plot_props)
 
 
 def handle_cli():
