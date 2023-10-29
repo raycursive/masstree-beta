@@ -22,10 +22,14 @@
 #include <vector>
 #include <fstream>
 #include <random>
+#include <gperftools/profiler.h>
+#include "nodeversion.hh"
+#include "measure_time.h"
 
 using lcdf::Str;
 using lcdf::String;
 using lcdf::Json;
+using std::getenv;
 extern int kvtest_first_seed;
 // Templated KV tests, so we can run them either client/server or linked with
 // the kvd binary.
@@ -48,7 +52,7 @@ inline Json kvtest_set_time(const Json& result, const lcdf::String& base, N n, d
 
 template <typename C>
 void kvtest_sync_rw1_seed(C &client, int seed)
-{
+{   
     client.rand.seed(seed);
     double tp0 = client.now();
     unsigned n;
@@ -119,6 +123,12 @@ void kvtest_rw1_seed(C &client, int seed)
 {
     unsigned n = kvtest_rw1puts_seed(client, seed);
 
+    // Profiling start
+    // auto prof_file_path = getenv("PROF_FILE_PATH");
+    // ProfilerStart(prof_file_path != nullptr ? prof_file_path : "test_prof.prof");
+    ProfilerStart("test_prof.prof");
+    client.notice("Profiling started \n");
+
     client.notice("now getting\n");
     int32_t *a = (int32_t *) malloc(sizeof(int32_t) * n);
     assert(a);
@@ -157,6 +167,11 @@ void kvtest_rw1_seed(C &client, int seed)
     kvtest_set_time(result, "ops", n + g, delta_puts + (tg1 - tg0));
     client.report(result);
     free(a);
+
+
+    // Profiling end
+    ProfilerStop();
+    client.notice("Profiling ended \n");
 }
 
 template <typename C>
@@ -167,8 +182,13 @@ void kvtest_rw1puts(C &client)
 
 template <typename C>
 void kvtest_rw1(C &client)
-{
+{   
+    // ProfilerStart("test_prof_main.prof");
     kvtest_rw1_seed(client, kvtest_first_seed + client.id() % 48);
+    // std::string s = "Measured time: " + std::to_string(measure_time::measure_inst.get_cur_total()) + " microseconds";
+    std::string s = "Measured time: " + std::to_string(measure_time::sa_time) + " microseconds";
+    client.notice(s.c_str());
+    // ProfilerStop();
 }
 
 // do a bunch of inserts to distinct keys, then check that they all showed up.

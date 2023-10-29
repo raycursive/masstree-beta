@@ -16,6 +16,8 @@
 #ifndef MASSTREE_NODEVERSION_HH
 #define MASSTREE_NODEVERSION_HH
 #include "compiler.hh"
+#include "measure_time.h"
+#include <chrono>
 
 template <typename P>
 class nodeversion {
@@ -48,12 +50,20 @@ class nodeversion {
     }
     template <typename SF>
     nodeversion<P> stable_annotated(SF spin_function) const {
+        // // auto call_id = measure_time::measure_inst.start_time_check();
+        // auto start = std::chrono::steady_clock::now();
+
         value_type x = v_;
         while (x & P::dirty_mask) {
             spin_function(nodeversion<P>(x));
             x = v_;
         }
         acquire_fence();
+
+        // // measure_time::measure_inst.end_time_check(call_id);
+        // auto end = std::chrono::steady_clock::now();
+        // measure_time::sa_time += std::chrono::duration_cast<measure_time::durat_t>(end - start).count();
+
         return x;
     }
 
