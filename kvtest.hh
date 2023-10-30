@@ -25,6 +25,10 @@
 #include <gperftools/profiler.h>
 #include "nodeversion.hh"
 #include "measure_time.h"
+#include <linux/perf_event.h>
+#include <sys/syscall.h>
+#include <sys/ioctl.h>
+#include <asm/unistd.h>
 
 using lcdf::Str;
 using lcdf::String;
@@ -128,7 +132,7 @@ void kvtest_rw1_seed(C &client, int seed)
     // ProfilerStart(prof_file_path != nullptr ? prof_file_path : "test_prof.prof");
     ProfilerStart("test_prof.prof");
     client.notice("Profiling started \n");
-
+    
     client.notice("now getting\n");
     int32_t *a = (int32_t *) malloc(sizeof(int32_t) * n);
     assert(a);
@@ -184,10 +188,35 @@ template <typename C>
 void kvtest_rw1(C &client)
 {   
     // ProfilerStart("test_prof_main.prof");
+    struct perf_event_attr pe;
+    long long count;
+    int fd;
+
+    memset(&pe, 0, sizeof(struct perf_event_attr));
+    pe.type = PERF_TYPE_HARDWARE;
+    pe.size = sizeof(struct perf_event_attr);
+    pe.config = PERF_COUNT_HW_CPU_CYCLES;
+    pe.disabled = 1;
+
+    fd = syscall(__NR_perf_event_open, &pe, 0, -1, -1, 0);
+    // if (fd == -1) {
+    //     return -1;
+    // }
+
+    ioctl(fd, PERF_EVENT_IOC_RESET, 0);
+    ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
+
     kvtest_rw1_seed(client, kvtest_first_seed + client.id() % 48);
     // std::string s = "Measured time: " + std::to_string(measure_time::measure_inst.get_cur_total()) + " microseconds";
     std::string s = "Measured time: " + std::to_string(measure_time::sa_time) + " microseconds";
     client.notice(s.c_str());
+
+    ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
+    read(fd, &count, sizeof(long long));
+    std::string message = "Measured cycles: " + std::to_string(count) + " cycles";
+    client.notice(message.c_str());
+
+    close(fd);
     // ProfilerStop();
 }
 
